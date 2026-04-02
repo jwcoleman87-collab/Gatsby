@@ -9,6 +9,7 @@ import {
 } from './engine/scoring';
 import { shouldAutoExecute } from './engine/autonomy';
 import { loadBrain, saveBrain, loadTrades, saveTrades, loadActivity, saveActivity } from './engine/storage';
+import { fetchRealBalance, placeRealBuy, checkExchangeStatus } from './engine/exchange';
 
 import CapitalBar from './components/CapitalBar';
 import OpportunityCard from './components/OpportunityCard';
@@ -19,7 +20,7 @@ import BrainPanel from './components/BrainPanel';
 import TradePanel from './components/TradePanel';
 import ActivityLog from './components/ActivityLog';
 
-const CAPITAL = 550;
+const CAPITAL_FALLBACK = 550;
 const SCAN_INTERVAL = 120_000;
 const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
@@ -72,6 +73,8 @@ export default function GatsbyDashboard() {
   const [domainFilter, setDomainFilter] = useState('ALL');
   const [signalFilter, setSignalFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('score');
+  const [exchangeStatus, setExchangeStatus] = useState(null); // null=unknown, {connected, audBalance}
+  const [liveCapital, setLiveCapital] = useState(CAPITAL_FALLBACK);
 
   const stoppedRef = useRef(stopped);
   const brainRef = useRef(brain);
@@ -82,6 +85,25 @@ export default function GatsbyDashboard() {
   useEffect(() => { brainRef.current = brain; }, [brain]);
   useEffect(() => { tradesRef.current = trades; }, [trades]);
   useEffect(() => { activityRef.current = activity; }, [activity]);
+
+  // ── Exchange status check ───────────────────────────────────────────────────
+  useEffect(() => {
+    checkExchangeStatus().then(status => {
+      setExchangeStatus(status);
+      if (status.connected && status.audBalance != null) {
+        setLiveCapital(status.audBalance);
+      }
+    });
+  }, []);
+
+  // Refresh real balance every 60s
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const bal = await fetchRealBalance();
+      if (bal?.audBalance != null) setLiveCapital(bal.audBalance);
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Core scan loop ──────────────────────────────────────────────────────────
 
@@ -97,20 +119,21 @@ export default function GatsbyDashboard() {
 
       const currentBrain = brainRef.current;
       const currentTrades = tradesRef.current;
+      const capitalToUse = liveCapital || CAPITAL_FALLBACK;
       const newOpps = [];
       const newAutoResults = {};
 
       // Markets
       if (raw.markets && Array.isArray(raw.markets)) {
         raw.markets.forEach(coin => {
-          const opp = scoreMarketOpp(coin, report, currentBrain, CAPITAL);
+          const opp = scoreMarketOpp(coin, report, currentBrain, capitalToUse);
           if (opp) newOpps.push(opp);
         });
       }
 
       // Yield — static sources
       YIELD_SOURCES.forEach(src => {
-        const opp = scoreYieldOpp(src, currentBrain, CAPITAL, null);
+        const opp = scoreYieldOpp(src, currentBrain, capitalToUse, null);
         if (opp) newOpps.push(opp);
       });
 
@@ -121,14 +144,14 @@ export default function GatsbyDashboard() {
           .sort((a, b) => b.apy - a.apy)
           .slice(0, 10);
         filtered.forEach(pool => {
-          const opp = scoreDefiPool(pool, currentBrain, CAPITAL);
+          const opp = scoreDefiPool(pool, currentBrain, capitalToUse);
           if (opp) newOpps.push(opp);
         });
       }
 
       // Arbitrage
       ARBITRAGE_TYPES.forEach(type => {
-        const opp = scoreArbitrageOpp(type, currentBrain, CAPITAL, raw.exchanges);
+        const opp = scoreArbitrageOpp(type, currentBrain, capitalToUse, raw.exchanges);
         if (opp) newOpps.push(opp);
       });
 
@@ -140,12 +163,12 @@ export default function GatsbyDashboard() {
 
       // Digital
       DIGITAL_OPPS.forEach(d => {
-        const opp = scoreDigitalOpp(d, currentBrain, CAPITAL);
+        const opp = scoreDigitalOpp(d, currentBrain, capitalToUse);
         if (opp) newOpps.push(opp);
       });
 
       // Macro
-      const macroOpps = buildMacroInsights(report, currentBrain, CAPITAL);
+      const macroOpps = buildMacroInsights(report, currentBrain, capitalToUse);
       macroOpps.forEach(o => newOpps.push(o));
 
       // Auto-execution
@@ -155,11 +178,26 @@ export default function GatsbyDashboard() {
 
       const autoEligible = newOpps.filter(o => ['STRONG BUY', 'BUY', 'LEAN BUY'].includes(o.signal) && o.domain === 'MARKETS');
 
-      autoEligible.forEach(opp => {
-        const check = shouldAutoExecute(opp, updatedBrain, CAPITAL, updatedTrades);
+      const autoPromises = autoEligible.map(async opp => {
+        const check = shouldAutoExecute(opp, updatedBrain, capitalToUse, updatedTrades);
         newAutoResults[opp.id] = { executed: check.execute, reason: check.reason };
 
         if (check.execute) {
+          // Attempt real order if exchange is connected
+          let realOrderId = null;
+          let realOrderFailed = false;
+          if (exchangeStatus?.connected && opp.coinSymbol) {
+            const result = await placeRealBuy(opp.coinSymbol, opp.suggestedPosition);
+            if (result.status === 'ok') {
+              realOrderId = result.orderId;
+            } else {
+              realOrderFailed = true;
+              updatedActivity = addActivity(updatedActivity, 'AUTO_SKIP',
+                `${opp.name} — exchange order failed: ${result.error}`);
+              return;
+            }
+          }
+
           const trade = {
             id: generateTradeId(),
             oppId: opp.id,
@@ -169,19 +207,31 @@ export default function GatsbyDashboard() {
             signal: opp.signal,
             amount: opp.suggestedPosition,
             auto: true,
+            real: !!realOrderId,
+            realOrderId,
             timestamp: Date.now(),
             outcome: null,
             metrics: opp.metrics,
             intelBacked: (opp.alerts?.length || 0) > 0,
           };
           updatedTrades = [...updatedTrades, trade];
+          const realTag = realOrderId ? ' ⚡ REAL ORDER' : ' (paper)';
           updatedActivity = addActivity(updatedActivity, 'AUTO_EXEC',
-            `${opp.name} — ${opp.signal} (score ${opp.totalScore}/10)`, opp.suggestedPosition);
+            `${opp.name} — ${opp.signal} score ${opp.totalScore}/10${realTag}`, opp.suggestedPosition);
+
+          // Refresh balance after real trade
+          if (realOrderId) {
+            fetchRealBalance().then(bal => {
+              if (bal?.audBalance != null) setLiveCapital(bal.audBalance);
+            });
+          }
         } else if (opp.signal !== 'HOLD' && opp.signal !== 'WATCH') {
           updatedActivity = addActivity(updatedActivity, 'AUTO_SKIP',
             `${opp.name} — skipped: ${check.reason}`);
         }
       });
+
+      await Promise.allSettled(autoPromises);
 
       // Block log
       newOpps.filter(o => o.signal === 'BLOCKED').forEach(opp => {
@@ -348,6 +398,14 @@ export default function GatsbyDashboard() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {exchangeStatus && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: exchangeStatus.connected ? '#00ff88' : '#ff4444' }} />
+              <span style={{ ...mono, fontSize: 10, color: exchangeStatus.connected ? '#00ff88' : '#ff4444' }}>
+                {exchangeStatus.connected ? `COINSPOT LIVE` : 'NO EXCHANGE'}
+              </span>
+            </div>
+          )}
           {lastScan && <span style={{ ...mono, fontSize: 10, color: '#333' }}>last scan {lastScan.toLocaleTimeString()}</span>}
           {scanning && <span style={{ ...mono, fontSize: 10, color: '#ffaa00' }}>● scanning...</span>}
         </div>
@@ -375,7 +433,7 @@ export default function GatsbyDashboard() {
       {/* Main content */}
       <div style={{ padding: '12px 14px', maxWidth: 1400, margin: '0 auto' }}>
 
-        <CapitalBar capital={CAPITAL} trades={trades} oppsCount={opps.length} scanning={scanning && !stopped} />
+        <CapitalBar capital={liveCapital} trades={trades} oppsCount={opps.length} scanning={scanning && !stopped} />
 
         {/* HUNT tab */}
         {tab === 'hunt' && (

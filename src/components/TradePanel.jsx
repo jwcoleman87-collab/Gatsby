@@ -23,6 +23,7 @@ function TradeCard({ trade, onResolve }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, color: domainColor }}>{domain?.short}</span>
             {trade.auto && <span style={{ ...mono, fontSize: 9, color: '#00ff88', border: '1px solid #00ff8844', borderRadius: 3, padding: '1px 5px' }}>⚡ AUTO</span>}
+            {trade.real && <span style={{ ...mono, fontSize: 9, color: '#00ddff', border: '1px solid #00ddff44', borderRadius: 3, padding: '1px 5px' }}>💰 REAL</span>}
             <SignalBadge signal={trade.signal} small />
           </div>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#e0e0e0' }}>{trade.name}</div>
