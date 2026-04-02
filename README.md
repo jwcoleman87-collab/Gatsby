@@ -1,25 +1,25 @@
 # Gatsby v0.5 — Multi-Domain Survival Engine
 
-## Quick Start
+## Deploy to Vercel (access from anywhere — iPad, phone, any browser)
+
+1. Go to **https://vercel.com** and sign up / log in with your GitHub account
+2. Click **"Add New Project"**
+3. Find and import the **gatsby** repository
+4. Leave all settings as default — Vercel auto-detects Create React App
+5. Click **Deploy**
+
+That's it. You'll get a URL like `https://gatsby-xxxx.vercel.app` that works on any device, anywhere.
+
+---
+
+## Local development (optional)
 
 ```
 npm install
 npm start
 ```
 
-Your browser will open to http://localhost:3000
-
-## Access from iPad (or any device on the same WiFi)
-
-1. Run `npm start` on your computer as normal
-2. Find your computer's local IP address:
-   - **Windows**: open Command Prompt → type `ipconfig` → look for **IPv4 Address** (e.g. `192.168.1.42`)
-   - **Mac**: System Settings → Wi-Fi → Details → IP Address
-3. On your iPad, open Safari and go to: `http://192.168.1.42:3000`
-   *(replace with your actual IP)*
-
-Both devices must be on the **same WiFi network**. The `.env.development` file
-already sets `HOST=0.0.0.0` so the app listens on all network interfaces.
+Opens at http://localhost:3000
 
 ## What it does
 
