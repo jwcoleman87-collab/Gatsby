@@ -9,6 +9,18 @@ npm start
 
 Your browser will open to http://localhost:3000
 
+## Access from iPad (or any device on the same WiFi)
+
+1. Run `npm start` on your computer as normal
+2. Find your computer's local IP address:
+   - **Windows**: open Command Prompt → type `ipconfig` → look for **IPv4 Address** (e.g. `192.168.1.42`)
+   - **Mac**: System Settings → Wi-Fi → Details → IP Address
+3. On your iPad, open Safari and go to: `http://192.168.1.42:3000`
+   *(replace with your actual IP)*
+
+Both devices must be on the **same WiFi network**. The `.env.development` file
+already sets `HOST=0.0.0.0` so the app listens on all network interfaces.
+
 ## What it does
 
 Gatsby scans 6 domains of financial opportunity every 2 minutes:

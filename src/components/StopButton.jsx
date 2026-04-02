@@ -2,12 +2,12 @@ import React from 'react';
 
 export default function StopButton({ stopped, onStop, onResume }) {
   return (
-    <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 1000 }}>
+    <div style={{ position: 'fixed', bottom: 28, right: 22, zIndex: 1000 }}>
       <button
         onClick={stopped ? onResume : onStop}
         style={{
-          width: 72,
-          height: 72,
+          width: 80,
+          height: 80,
           borderRadius: '50%',
           border: 'none',
           background: stopped ? '#00bb55' : '#cc0022',

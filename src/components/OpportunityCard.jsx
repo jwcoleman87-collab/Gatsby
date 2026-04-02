@@ -151,14 +151,14 @@ export default function OpportunityCard({ opp, onApprove, onDeny, autoResult }) 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button onClick={() => onApprove(opp)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 6, border: '1px solid #00ff88',
-              background: 'transparent', color: '#00ff88', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', ...mono
+              flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid #00ff88',
+              background: 'transparent', color: '#00ff88', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', minHeight: 46, ...mono
             }}>✓ APPROVE</button>
             <button onClick={() => onDeny(opp)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 6, border: '1px solid #ff4444',
-              background: 'transparent', color: '#ff4444', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', ...mono
+              flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid #ff4444',
+              background: 'transparent', color: '#ff4444', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', minHeight: 46, ...mono
             }}>✗ DENY</button>
           </div>
         </div>

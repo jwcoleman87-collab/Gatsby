@@ -38,13 +38,13 @@ function TradeCard({ trade, onResolve }) {
           ) : (
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <button onClick={() => onResolve(trade.id, 'WON')} style={{
-                padding: '5px 10px', borderRadius: 5, border: '1px solid #00ff88',
-                background: 'transparent', color: '#00ff88', fontSize: 11, cursor: 'pointer', ...mono
-              }}>WON</button>
+                padding: '10px 16px', borderRadius: 8, border: '1px solid #00ff88',
+                background: 'transparent', color: '#00ff88', fontSize: 12, cursor: 'pointer', minHeight: 44, ...mono
+              }}>✓ WON</button>
               <button onClick={() => onResolve(trade.id, 'LOST')} style={{
-                padding: '5px 10px', borderRadius: 5, border: '1px solid #ff4444',
-                background: 'transparent', color: '#ff4444', fontSize: 11, cursor: 'pointer', ...mono
-              }}>LOST</button>
+                padding: '10px 16px', borderRadius: 8, border: '1px solid #ff4444',
+                background: 'transparent', color: '#ff4444', fontSize: 12, cursor: 'pointer', minHeight: 44, ...mono
+              }}>✗ LOST</button>
             </div>
           )}
         </div>

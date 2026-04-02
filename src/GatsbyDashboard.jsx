@@ -354,15 +354,15 @@ export default function GatsbyDashboard() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a2e', background: '#0a0a15', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a2e', background: '#0a0a15', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: '10px 20px', background: 'transparent',
+            padding: '14px 18px', background: 'transparent',
             border: 'none', borderBottom: `2px solid ${tab === t.id ? '#00ff88' : 'transparent'}`,
             color: tab === t.id ? '#00ff88' : '#555', cursor: 'pointer',
             fontSize: 13, fontWeight: tab === t.id ? 600 : 400,
             fontFamily: "'Outfit', sans-serif", whiteSpace: 'nowrap',
-            transition: 'color 0.15s',
+            transition: 'color 0.15s', minHeight: 48,
           }}>
             {t.label}
             {t.id === 'trades' && pendingCount > 0 && (
@@ -373,7 +373,7 @@ export default function GatsbyDashboard() {
       </div>
 
       {/* Main content */}
-      <div style={{ padding: '16px 24px', maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ padding: '12px 14px', maxWidth: 1400, margin: '0 auto' }}>
 
         <CapitalBar capital={CAPITAL} trades={trades} oppsCount={opps.length} scanning={scanning && !stopped} />
 
@@ -381,43 +381,44 @@ export default function GatsbyDashboard() {
         {tab === 'hunt' && (
           <div>
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Domain pills */}
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', marginBottom: 8, paddingBottom: 4 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', minWidth: 'max-content' }}>
                 {DOMAIN_FILTERS.map(df => (
                   <button key={df.id} onClick={() => setDomainFilter(df.id)} style={{
-                    padding: '4px 10px', borderRadius: 16, border: `1px solid ${domainFilter === df.id ? '#00ff88' : '#1a1a2e'}`,
+                    padding: '9px 14px', borderRadius: 20, border: `1px solid ${domainFilter === df.id ? '#00ff88' : '#1a1a2e'}`,
                     background: domainFilter === df.id ? '#00ff8820' : 'transparent',
                     color: domainFilter === df.id ? '#00ff88' : '#555',
-                    fontSize: 11, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
-                    transition: 'all 0.15s',
+                    fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                    transition: 'all 0.15s', minHeight: 38, whiteSpace: 'nowrap',
                   }}>{df.label}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Signal filter */}
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {SIGNAL_FILTERS.map(sf => (
-                  <button key={sf} onClick={() => setSignalFilter(sf)} style={{
-                    padding: '3px 8px', borderRadius: 12, border: `1px solid ${signalFilter === sf ? '#888' : '#1a1a2e'}`,
-                    background: signalFilter === sf ? '#88888820' : 'transparent',
-                    color: signalFilter === sf ? '#e0e0e0' : '#444',
-                    fontSize: 10, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace",
-                    transition: 'all 0.15s',
-                  }}>{sf}</button>
-                ))}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+              {/* Signal filter — scrollable row */}
+              <div style={{ flex: 1, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', minWidth: 'max-content' }}>
+                  {SIGNAL_FILTERS.map(sf => (
+                    <button key={sf} onClick={() => setSignalFilter(sf)} style={{
+                      padding: '7px 10px', borderRadius: 12, border: `1px solid ${signalFilter === sf ? '#888' : '#1a1a2e'}`,
+                      background: signalFilter === sf ? '#88888820' : 'transparent',
+                      color: signalFilter === sf ? '#e0e0e0' : '#444',
+                      fontSize: 10, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace",
+                      transition: 'all 0.15s', minHeight: 36, whiteSpace: 'nowrap',
+                    }}>{sf}</button>
+                  ))}
+                </div>
               </div>
 
               {/* Sort */}
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                 {['score', 'signal', 'net'].map(s => (
                   <button key={s} onClick={() => setSortBy(s)} style={{
-                    padding: '3px 8px', borderRadius: 4, border: `1px solid ${sortBy === s ? '#444' : '#1a1a2e'}`,
+                    padding: '7px 10px', borderRadius: 4, border: `1px solid ${sortBy === s ? '#444' : '#1a1a2e'}`,
                     background: sortBy === s ? '#1a1a2e' : 'transparent',
                     color: sortBy === s ? '#aaa' : '#333',
-                    fontSize: 10, cursor: 'pointer', ...mono,
+                    fontSize: 10, cursor: 'pointer', minHeight: 36, ...mono,
                   }}>↕ {s}</button>
                 ))}
               </div>
@@ -429,7 +430,7 @@ export default function GatsbyDashboard() {
                 {scanning ? 'Scanning...' : 'No opportunities match filters'}
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 10 }}>
               {displayOpps.map(opp => (
                 <OpportunityCard
                   key={opp.id}
